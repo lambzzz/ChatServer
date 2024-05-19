@@ -3,7 +3,7 @@
 using namespace std;
 
 Redis::Redis()
-    : m_publish_context(nullptr), m_subcribe_context(nullptr)
+    : m_publish_context(nullptr), m_subcribe_context(nullptr), redis_password("1359")
 {
 }
 
@@ -43,6 +43,25 @@ bool Redis::connect()
     {
         cerr << "connect redis failed!" << endl;
         return false;
+    }
+    
+    if (!redis_password.empty())
+    {
+        if (((redisReply *)redisCommand(m_publish_context, "AUTH %s", redis_password))->type == REDIS_REPLY_ERROR)
+        {
+            cerr << "wrong redis password!" << endl;
+            return false;
+        }
+        if (((redisReply *)redisCommand(m_subcribe_context, "AUTH %s", redis_password))->type == REDIS_REPLY_ERROR)
+        {
+            cerr << "wrong redis password!" << endl;
+            return false;
+        }
+        if (((redisReply *)redisCommand(m_data_context, "AUTH %s", redis_password))->type == REDIS_REPLY_ERROR)
+        {
+            cerr << "wrong redis password!" << endl;
+            return false;
+        }
     }
 
     // 在单独的线程中，监听通道上的事件，有消息给业务层进行上报

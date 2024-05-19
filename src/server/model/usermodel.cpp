@@ -13,7 +13,8 @@ bool UserModel::insert(User &user)
 
     MySQL mysql;
     MYSQL* m_sql;
-    SqlConnRAII(&m_sql,  SqlConnPool::Instance());
+    // fix: 修复update之前提前释放sql回连接池的问题
+    SqlConnRAII sql_raii(&m_sql,  SqlConnPool::Instance());
     if (mysql.connect(m_sql))
     {
         if (mysql.update(sql))
@@ -36,7 +37,7 @@ User UserModel::query(int id)
 
     MySQL mysql;
     MYSQL* m_sql;
-    SqlConnRAII(&m_sql,  SqlConnPool::Instance());
+    SqlConnRAII sql_raii(&m_sql,  SqlConnPool::Instance());
     if (mysql.connect(m_sql))
     {
         MYSQL_RES *res = mysql.query(sql);
@@ -68,7 +69,7 @@ bool UserModel::updateState(User user)
 
     MySQL mysql;
     MYSQL* m_sql;
-    SqlConnRAII(&m_sql,  SqlConnPool::Instance());
+    SqlConnRAII sql_raii(&m_sql,  SqlConnPool::Instance());
     if (mysql.connect(m_sql))
     {
         if (mysql.update(sql))
@@ -87,7 +88,7 @@ void UserModel::resetState()
 
     MySQL mysql;
     MYSQL* m_sql;
-    SqlConnRAII temp(&m_sql,  SqlConnPool::Instance());
+    SqlConnRAII sql_raii(&m_sql,  SqlConnPool::Instance());
     if (mysql.connect(m_sql))
     {
         mysql.update(sql);

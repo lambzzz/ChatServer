@@ -20,13 +20,14 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    static string host = "127.0.0.1";
-    static string user = "root";
-    static string password = "root";
-    static string dbname = "chat";
-    static int connSize = 10;
+    string sql_host = "127.0.0.1";
+    int sql_port = 3306;
+    string sql_user = "root";
+    string sql_password = "1359";
+    string sql_dbname = "chat";
+    int sql_connSize = 10;
 
-    SqlConnPool::Instance()->Init(host.c_str(),3306,user.c_str(),password.c_str(),dbname.c_str(),connSize);
+    SqlConnPool::Instance()->Init(sql_host.c_str(),sql_port,sql_user.c_str(),sql_password.c_str(),sql_dbname.c_str(),sql_connSize);
 
     // 解析通过命令行参数传递的ip和port
     char *ip = argv[1];
