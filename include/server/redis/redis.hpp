@@ -33,6 +33,7 @@ public:
 
     string get_state(int id);
     bool set_state(int id,string state);
+    bool add_user(int id);
     bool del_user(int id);
 
 private:

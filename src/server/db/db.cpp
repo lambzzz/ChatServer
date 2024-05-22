@@ -10,14 +10,14 @@
 // 初始化数据库连接
 MySQL::MySQL()
 {
-    m_conn = mysql_init(nullptr);
+    // m_conn = mysql_init(nullptr);
 }
 
 // 释放数据库连接资源
 MySQL::~MySQL()
 {
-    if (m_conn != nullptr)
-        mysql_close(m_conn);
+    // if (m_conn != nullptr)
+    //     mysql_close(m_conn);
 }
 
 // 连接数据库

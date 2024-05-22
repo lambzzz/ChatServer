@@ -99,7 +99,10 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
             m_userModel.updateState(user);
 
             string value = m_redis.get_state(id);
-            if(value == "offline"){
+            if (value == "null"){
+                m_redis.add_user(id);
+            }
+            else if(value == "offline"){
                 m_redis.set_state(id,"online");
             }
             

@@ -47,17 +47,17 @@ bool Redis::connect()
     
     if (!redis_password.empty())
     {
-        if (((redisReply *)redisCommand(m_publish_context, "AUTH %s", redis_password))->type == REDIS_REPLY_ERROR)
+        if (((redisReply *)redisCommand(m_publish_context, "AUTH %s", redis_password.c_str()))->type == REDIS_REPLY_ERROR)
         {
             cerr << "wrong redis password!" << endl;
             return false;
         }
-        if (((redisReply *)redisCommand(m_subcribe_context, "AUTH %s", redis_password))->type == REDIS_REPLY_ERROR)
+        if (((redisReply *)redisCommand(m_subcribe_context, "AUTH %s", redis_password.c_str()))->type == REDIS_REPLY_ERROR)
         {
             cerr << "wrong redis password!" << endl;
             return false;
         }
-        if (((redisReply *)redisCommand(m_data_context, "AUTH %s", redis_password))->type == REDIS_REPLY_ERROR)
+        if (((redisReply *)redisCommand(m_data_context, "AUTH %s", redis_password.c_str()))->type == REDIS_REPLY_ERROR)
         {
             cerr << "wrong redis password!" << endl;
             return false;
@@ -89,6 +89,17 @@ string Redis::get_state(int id){
 
 bool Redis::set_state(int id, string state){
     redisReply *reply = (redisReply *)redisCommand(m_data_context, "SET %d %s", id, state.c_str());
+    if (nullptr == reply)
+    {
+        cerr << "set command failed!" << endl;
+        return false;
+    }
+    freeReplyObject(reply);
+    return true;
+}
+
+bool Redis::add_user(int id){
+    redisReply *reply = (redisReply *)redisCommand(m_data_context, "ADD %d online", id);
     if (nullptr == reply)
     {
         cerr << "set command failed!" << endl;
