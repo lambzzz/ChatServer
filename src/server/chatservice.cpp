@@ -55,7 +55,7 @@ MsgHandler ChatService::getHandler(int msgid)
     if (it == m_msgHandlerMap.end())
     {
         // 返回一个默认的处理器，空操作
-        return [=](const TcpConnectionPtr &conn, json &js, Timestamp) {
+        return [=](const SSLConnectionPtr &conn, json &js, Timestamp) {
             LOG_ERROR << "msgid:" << msgid << " can not find handler!";
         };
     }
@@ -66,7 +66,7 @@ MsgHandler ChatService::getHandler(int msgid)
 }
 
 // 处理登录业务  id  pwd   pwd
-void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::login(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     int id = js["id"].get<int>();
     string pwd = js["password"];
@@ -81,7 +81,8 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
             response["msgid"] = LOGIN_MSG_ACK;
             response["errno"] = 2;
             response["errmsg"] = "this account is using, input another!";
-            conn->send(response.dump());
+            string response_str = response.dump();
+            conn->SSLSendData(response_str.c_str(), response_str.size());
         }
         else
         {
@@ -167,7 +168,8 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
                 response["groups"] = groupV;
             }
 
-            conn->send(response.dump());
+            string response_str = response.dump();
+            conn->SSLSendData(response_str.c_str(), response_str.size());
         }
     }
     else
@@ -177,12 +179,13 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
         response["msgid"] = LOGIN_MSG_ACK;
         response["errno"] = 1;
         response["errmsg"] = "id or password is invalid!";
-        conn->send(response.dump());
+        string response_str = response.dump();
+        conn->SSLSendData(response_str.c_str(), response_str.size());
     }
 }
 
 // 处理注册业务  name  password
-void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::reg(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     string name = js["name"];
     string pwd = js["password"];
@@ -198,7 +201,8 @@ void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
         response["msgid"] = REG_MSG_ACK;
         response["errno"] = 0;
         response["id"] = user.getId();
-        conn->send(response.dump());
+        string response_str = response.dump();
+        conn->SSLSendData(response_str.c_str(), response_str.size());
     }
     else
     {
@@ -206,12 +210,13 @@ void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
         json response;
         response["msgid"] = REG_MSG_ACK;
         response["errno"] = 1;
-        conn->send(response.dump());
+        string response_str = response.dump();
+        conn->SSLSendData(response_str.c_str(), response_str.size());
     }
 }
 
 // 处理注销业务
-void ChatService::loginout(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::loginout(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     int userid = js["id"].get<int>();
 
@@ -234,7 +239,7 @@ void ChatService::loginout(const TcpConnectionPtr &conn, json &js, Timestamp tim
 }
 
 // 处理客户端异常退出
-void ChatService::clientCloseException(const TcpConnectionPtr &conn)
+void ChatService::clientCloseException(const SSLConnectionPtr &conn)
 {
     User user;
     {
@@ -264,7 +269,7 @@ void ChatService::clientCloseException(const TcpConnectionPtr &conn)
 }
 
 // 一对一聊天业务
-void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::oneChat(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     int toid = js["toid"].get<int>();
 
@@ -274,7 +279,8 @@ void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time
         if (it != m_userConnMap.end())
         {
             // toid在线，转发消息   服务器主动推送消息给toid用户
-            it->second->send(js.dump());
+            string response_str = js.dump();
+            it->second->SSLSendData(response_str.c_str(), response_str.size());
             return;
         }
     }
@@ -307,7 +313,7 @@ void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time
 }
 
 // 添加好友业务 msgid id friendid
-void ChatService::addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::addFriend(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     int userid = js["id"].get<int>();
     int friendid = js["friendid"].get<int>();
@@ -317,7 +323,7 @@ void ChatService::addFriend(const TcpConnectionPtr &conn, json &js, Timestamp ti
 }
 
 // 创建群组业务
-void ChatService::createGroup(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::createGroup(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     int userid = js["id"].get<int>();
     string name = js["groupname"];
@@ -334,7 +340,7 @@ void ChatService::createGroup(const TcpConnectionPtr &conn, json &js, Timestamp 
 }
 
 // 加入群组业务
-void ChatService::addGroup(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::addGroup(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     int userid = js["id"].get<int>();
     int groupid = js["groupid"].get<int>();
@@ -342,7 +348,7 @@ void ChatService::addGroup(const TcpConnectionPtr &conn, json &js, Timestamp tim
 }
 
 // 群组聊天业务
-void ChatService::groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
+void ChatService::groupChat(const SSLConnectionPtr &conn, json &js, Timestamp time)
 {
     int userid = js["id"].get<int>();
     int groupid = js["groupid"].get<int>();
@@ -355,7 +361,8 @@ void ChatService::groupChat(const TcpConnectionPtr &conn, json &js, Timestamp ti
         if (it != m_userConnMap.end())
         {
             // 转发群消息
-            it->second->send(js.dump());
+            string response_str = js.dump();
+            it->second->SSLSendData(response_str.c_str(), response_str.size());
         }
         else
         {
@@ -393,7 +400,7 @@ void ChatService::handleRedisSubscribeMessage(int userid, string msg)
     auto it = m_userConnMap.find(userid);
     if (it != m_userConnMap.end())
     {
-        it->second->send(msg);
+        it->second->SSLSendData(msg.c_str(), msg.size());
         return;
     }
 

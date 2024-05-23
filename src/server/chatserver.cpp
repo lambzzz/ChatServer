@@ -34,20 +34,42 @@ void ChatServer::start()
 // 上报链接相关信息的回调函数
 void ChatServer::onConnection(const TcpConnectionPtr &conn)
 {
-    // 客户端断开链接
-    if (!conn->connected())
+    if (conn->connected())
     {
-        ChatService::instance()->clientCloseException(conn);
+        conn->setTcpNoDelay(true);
+        // LOG_WARN << "connected";
+        SSLConnectionPtr ssl_connptr = make_shared<SSLConnection>(conn);
+        ssl_connptr->set_type(SSL_TYPE::SERVER);
+        m_connMap[conn] = ssl_connptr;
+        ssl_connptr->set_receive_callback(std::bind(&ChatServer::handledata, this, _1, _2, _3));
+        ssl_connptr->onConnection(conn);
+        //std::bind(&SSL_Helper::onMessage, this, _1, _2, _3)
+        //conn->setConnectionCallback()
+    }
+    // 客户端断开链接
+    else
+    {
+        ChatService::instance()->clientCloseException(m_connMap[conn]);
+        m_connMap.erase(conn);
         conn->shutdown();
     }
 }
 
-// 上报读写事件相关信息的回调函数
-void ChatServer::onMessage(const TcpConnectionPtr &conn,
-                           Buffer *buffer,
-                           Timestamp time)
+void ChatServer::onMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp timestamp)
 {
-    string buf = buffer->retrieveAllAsString();
+    auto& ssl_helper = m_connMap[conn];
+    ssl_helper->onMessage(conn, buf, timestamp);
+}
+
+// 上报读写事件相关信息的回调函数
+int ChatServer::handledata(SSLConnection* ssl_conn, unsigned char* data, size_t datalen)
+// (const TcpConnectionPtr &conn,
+//                            Buffer *buffer,
+//                            Timestamp time)
+{
+    string buf(data, data + datalen);
+    SSLConnectionPtr ssl_connptr = m_connMap[ssl_conn->get_conn()];
+    Timestamp time;
 
     // 测试，添加json打印代码
     //cout << buf << endl;
@@ -58,5 +80,5 @@ void ChatServer::onMessage(const TcpConnectionPtr &conn,
     // 通过js["msgid"] 获取=》业务handler=》conn  js  time
     auto msgHandler = ChatService::instance()->getHandler(js["msgid"].get<int>());
     // 回调消息绑定好的事件处理器，来执行相应的业务处理
-    msgHandler(conn, js, time);
+    msgHandler(ssl_connptr, js, time);
 }

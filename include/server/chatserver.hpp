@@ -3,6 +3,8 @@
 
 #include <muduo/net/TcpServer.h>
 #include <muduo/net/EventLoop.h>
+#include "SSLConnection.h"
+#include <unordered_map>
 using namespace muduo;
 using namespace muduo::net;
 
@@ -27,8 +29,12 @@ private:
                    Buffer *,
                    Timestamp);
 
+    int handledata(SSLConnection* ssl_conn, unsigned char* data, size_t datalen);
+
     TcpServer m_server; // 组合的muduo库，实现服务器功能的类对象
     EventLoop *m_loop;  // 指向事件循环对象的指针
+
+    std::unordered_map<TcpConnectionPtr, SSLConnectionPtr> m_connMap;
 };
 
 #endif
